@@ -26,7 +26,11 @@ export class App extends React.Component<{}, IAppState> {
   render() {
     console.log(this.state.results);
     return (
-      <PlaceSearchResultList />
+      <PlaceSearchResultList
+        results={this.state.results}
+        inProgress={this.state.inProgress}
+        term={this.state.term}
+        onSearchTermChanged={s => this.trySearch(s)} />
     );
   }
 };
