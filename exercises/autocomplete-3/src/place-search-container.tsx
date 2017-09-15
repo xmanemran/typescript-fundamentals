@@ -5,11 +5,20 @@ import { PlaceDetails } from './utils/places';
 import { PlaceSearchResult } from './place-search-result';
 import { PlaceSearchResultList } from './place-search-result-list';
 
+interface IPlaceSearchContainerState {
+  results: PlaceDetails[];
+  term: string,
+  existingSearch?: Promise<PlaceDetails[]>;
+}
 
-export class PlaceSearchContainer extends React.Component<{}, {}> {
+export class PlaceSearchContainer extends React.Component<{}, IPlaceSearchContainerState> {
   constructor() {
     super();
-    this.state = {};
+    this.state = {
+      term: '',
+      results: [], // List of search results
+      existingSearch: undefined // Most recent search (a promise that resolves to an array)
+    };
     // Event handler for changes to search term
     this.beginSearch = this.beginSearch.bind(this);
   }
@@ -22,8 +31,18 @@ export class PlaceSearchContainer extends React.Component<{}, {}> {
    * @return {undefined}
    */
   beginSearch(term: string) {
-    // Initiate a search using the ./autocomplete.ts module
-    // When the promise it returns resolves, update your state accordingly
+    
+    // Kick off the new search, with the new search term
+    let p = autocomplete(term);
+    // Update the existingSearch state, so our component re-renders
+    //   (probably to update the "Searching for <term>..." message)
+    this.setState({ term, existingSearch: p, results: [] });
+    // Attach a promise handler to the search.
+    //  THIS WILL ONLY BE INVOKED IF THE SEARCH RUNS TO COMPLETION
+    p.then((results) => {
+      // When the search completes, update the "results" state, triggering a re-render
+      this.setState({ results, existingSearch: undefined });
+    });
   }
 
   /**
@@ -37,8 +56,11 @@ export class PlaceSearchContainer extends React.Component<{}, {}> {
    */
   render() {
     return (
-      <p>Replace this with a PlaceSearchResultList</p>
-      // <PlaceSearchResultList />
+      <PlaceSearchResultList
+        results={this.state.results}
+        inProgress={!!this.state.existingSearch && this.state.results.length === 0}
+        term={this.state.term}
+        onSearchTermChanged={s => this.beginSearch(s)} />
     );
   }
 }
